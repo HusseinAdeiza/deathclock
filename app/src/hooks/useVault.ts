@@ -26,7 +26,18 @@ export function useVault(owner: string | null, walletProvider: any) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [lastSignature, setLastSignature] = useState<string | null>(null);
-  const ownerKey = useMemo(() => owner ? new PublicKey(owner) : null, [owner]);
+  // A wallet that reports a public key we cannot parse should degrade to "no
+  // vault", not throw during render and blank the page. Some injected
+  // providers expose publicKey as a plain object whose toString() is
+  // "[object Object]", which new PublicKey() rejects with a base58 error.
+  const ownerKey = useMemo(() => {
+    if (!owner) return null;
+    try {
+      return new PublicKey(owner);
+    } catch {
+      return null;
+    }
+  }, [owner]);
   const provider = useMemo(() => {
     if (!ownerKey || !walletProvider) return null;
     const wallet = { publicKey: ownerKey, signTransaction: (tx: any) => walletProvider.signTransaction(tx), signAllTransactions: (txs: any[]) => walletProvider.signAllTransactions(txs) };
