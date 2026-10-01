@@ -51,9 +51,34 @@ Every 30 days the owner must produce a Groth16 proof that a guest program execut
 3. The timestamp is within 300 seconds of chain time — this is what makes a replayed receipt worthless.
 4. The router's `groth_16_verifier` accepts the BN254 pairing check.
 
-The public input is `SHA-256(journal_outputs)`. The journal is 64 bytes: a commitment to the owner's identity, the timestamp, and a 24-byte nonce. The verifier learns *that* the owner is alive, and nothing else.
+The public input is `SHA-256(journal_outputs)`. The journal is 64 bytes: a SHA-256 commitment over `owner || timestamp_le || nonce`, followed by the raw 8-byte timestamp and 24-byte nonce.
 
-**Privacy is the point.** A proof of death is broadcast to everyone, and so is a proof of life — inheritance is a deeply private matter, and the public chain should not record either. The guest reads the owner key and outputs only a commitment.
+**What the proof does and does not hide.** The ZK proof here is *attestation*, not
+secrecy, and it is worth being precise about which is which.
+
+The guest commits the owner key, timestamp, and nonce in the clear:
+
+```rust
+env::commit_slice(&commitment);   // SHA-256(owner || timestamp || nonce)
+env::commit_slice(&input[32..40]); // timestamp, raw
+env::commit_slice(&input[40..64]); // nonce, raw
+```
+
+`journal_outputs` is a transaction argument, so it is public on-chain, and
+`HeartbeatEvent` additionally emits the owner and timestamp. **A heartbeat does
+not hide that a particular vault owner proved they were alive at a given
+time.** Anyone watching the cluster can link heartbeats to a vault address and
+build a liveness history for it.
+
+What the proof guarantees is narrower and still non-trivial: only the committed
+guest running on the pinned image can produce a journal the verifier accepts, and
+the on-chain check binds it to the vault owner and the live cluster clock. A
+stale or replayed receipt is worthless.
+
+Hiding liveness would need the guest to commit only a commitment over the whole
+input, with the timestamp checked inside the guest rather than published — a real
+design change, not a tweak. Tracked as a known limitation rather than claimed as
+a feature it is not.
 
 ## Architecture
 

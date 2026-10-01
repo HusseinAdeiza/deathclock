@@ -58,6 +58,14 @@ in the deployed bytecode.
 - The payout path moves lamports, not SPL tokens. An SPL migration was
   attempted and reverted; `docs/MIGRATION-NOTES.md` explains that changing only
   the payout accounting would mark an estate released while paying nothing.
+- **`resolve_challenge` is permissionless.** It takes `is_alive` from any caller,
+  so after the 48-hour challenge anyone can push a vault to `Release` without the
+  owner's consent. The owner can always recover via `heartbeat` or
+  `emergency_recover`, so this cannot steal funds, but it is griefable and the
+  fix (require an owner signature when `is_alive` is false, or accept a fresh
+  proof) is not deployed. Reported in the audit thread rather than fixed under
+  demo pressure.
+- **The heartbeat does not hide liveness.** See the privacy note above.
 
 `docs/POSTMORTEM.md` records what failed and why, including a two-hour
 airdrop-blocked deployment that could only be solved from a second machine.
@@ -104,9 +112,14 @@ The heartbeat commits to `SHA-256(owner || timestamp_le || nonce)`, so the
 verifier learns *that* the owner is alive and nothing else. The timestamp must be
 within 300 s of chain time, which is what makes a replayed receipt worthless.
 
-**Privacy is the point.** A proof of death is broadcast to everyone — and so is a
-proof of life. Inheritance is deeply private, and the public chain should record
-neither.
+**On privacy, precisely:** the heartbeat proves *attestation*, not secrecy. The
+guest commits the owner key, timestamp, and nonce in the clear, and
+`journal_outputs` is a public transaction argument, so a heartbeat does **not**
+hide that a given vault owner proved they were alive. What it guarantees is that
+only the pinned guest could produce an accepted journal, bound to the owner and
+the cluster clock. Hiding liveness would mean committing only a commitment and
+checking the timestamp inside the guest — a real design change, listed under
+"what is not done" rather than claimed as a feature.
 
 ## 4. UX — "how well does it use blockchain to create great UX"
 
