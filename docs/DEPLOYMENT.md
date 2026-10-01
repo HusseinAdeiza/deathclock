@@ -25,6 +25,29 @@ CLUSTER=devnet bash scripts/deploy.sh
 
 The script intentionally does not rewrite `Anchor.toml` or `declare_id!` after deployment. Generate and review a fresh program keypair deliberately when a new deployment identity is required.
 
+### About `drain-devnet-keypairs.sh`
+
+The name reads worse than the script is. It exists because of a hard constraint in
+Solana's loader: a program address must not already have an account on-chain, and
+even a 0-byte account owes the rent-exempt minimum. So once a program keypair has
+been funded even once, that address can never be deployed to, and `solana program
+deploy` fails with "is not an upgradeable program or already in use".
+
+The fix is to drain the address to the rent floor and deploy immediately, which is
+what `solana program deploy` expects you to do. It only ever moves lamports *out*
+of the deploy-time keypairs in `target/devnet/`, never out of a vault, and never
+touches a user balance.
+
+To redeploy to the same address, run:
+
+```bash
+bash scripts/drain-devnet-keypairs.sh   # down to ~0.002 SOL
+CLUSTER=devnet bash scripts/deploy.sh  # immediately after
+```
+
+If you are reading the scripts directory cold, this is the one name that will
+otherwise cost you ten minutes.
+
 ## Verification
 
 ```bash

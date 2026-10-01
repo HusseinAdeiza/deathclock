@@ -128,6 +128,9 @@ The rationale is that the fee is collected exactly once, at the moment value act
 - `vendor/risc0-solana/` — vendored `verifier_router` and `groth_16_verifier`.
 - `app/` — Next.js 14 frontend with Phantom connection.
 - `scripts/` — proving, E2E, deployment, and VPS tunnel scripts.
+  `drain-devnet-keypairs.sh` moves lamports *out* of deploy-time keypairs only,
+  because Solana will not let you deploy to an address that has ever held an
+  account; see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 - `docs/ARCHITECTURE.md` — component and sequence diagrams.
 - `docs/POSTMORTEM.md` — the failures behind this build, and what caused them.
 - `docs/DEMO.md` — judge-facing demo script.
