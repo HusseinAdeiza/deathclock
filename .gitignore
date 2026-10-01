@@ -11,3 +11,6 @@ app/.next/
 
 # keep the documented template even though .env.* is ignored
 !.env.example
+
+# local-only: signing trust map and one-off maintenance scripts
+Local_only/

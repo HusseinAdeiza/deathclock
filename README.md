@@ -1,5 +1,9 @@
 # DeathClock
 
+> **Crypto World's Fair submission:** [`SUBMISSION.md`](SUBMISSION.md) —
+> organised against the six judging criteria, with reproducible commands.
+> Third-party code and licenses: [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md).
+
 **Your will, on-chain.** DeathClock is a trustless inheritance protocol for Solana. An owner deposits SOL into a PDA vault, proves they are alive with a zero-knowledge heartbeat, and names the beneficiaries who receive the estate after a 48-hour challenge window.
 
 The heartbeat is a real RISC Zero proof, verified on-chain by Solana. Not a mock, not a signature, not an oracle assertion.
