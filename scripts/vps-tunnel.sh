@@ -12,7 +12,10 @@
 #   bash scripts/vps-tunnel.sh &            # background
 set -uo pipefail
 
-VPS_HOST="${DEATHCLOCK_VPS:-root@161.97.139.15}"
+# No default: this is the author's own validator host, which has no business
+# being published in a public repo. Point DEATHCLOCK_VPS at your own host.
+: "${DEATHCLOCK_VPS:?set DEATHCLOCK_VPS=user@your-validator-host}"
+VPS_HOST="$DEATHCLOCK_VPS"
 LOCAL_RPC_PORT="${DEATHCLOCK_LOCAL_RPC_PORT:-8899}"
 LOCAL_WS_PORT="${DEATHCLOCK_LOCAL_WS_PORT:-8900}"
 RETRY_SECONDS="${DEATHCLOCK_TUNNEL_RETRY:-5}"

@@ -17,7 +17,7 @@ import { Connection, Keypair, PublicKey, SystemProgram } from "@solana/web3.js";
 import { ensureRpcTransport } from "./rpc-transport";
 
 // Local validator by default; set DEATHCLOCK_RPC for a public cluster.
-//   ssh -L 8899:127.0.0.1:8899 root@161.97.139.15
+//   ssh -L 8899:127.0.0.1:8899 root@your-validator-host
 const RPC = process.env.DEATHCLOCK_RPC ?? "http://127.0.0.1:8899";
 const {
   ROUTER_PROGRAM_ID: _ROUTER,

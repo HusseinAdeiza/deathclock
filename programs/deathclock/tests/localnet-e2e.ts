@@ -55,7 +55,7 @@ function loadKeypair(path: string): Keypair {
 
 describe("DeathClock localnet E2E (real RISC Zero receipt)", () => {
   // Points at the VPS validator through an SSH tunnel:
-  //   ssh -L 8899:127.0.0.1:8899 root@161.97.139.15
+  //   ssh -L 8899:127.0.0.1:8899 root@your-validator-host
   const connection = new Connection(
     process.env.DEATHCLOCK_RPC ?? "http://127.0.0.1:8899",
     "confirmed",
