@@ -23,8 +23,28 @@ export const NETWORK = process.env.NEXT_PUBLIC_NETWORK || "devnet";
 export const EXPLORER_URL =
   process.env.NEXT_PUBLIC_EXPLORER_URL || "https://explorer.solana.com";
 
-export const HEARTBEAT_INTERVAL = 30 * 24 * 60 * 60;
-export const CHALLENGE_PERIOD = 48 * 60 * 60;
+/**
+ * Vault timing, in seconds.
+ *
+ * The defaults are the production values: a 30-day heartbeat and a 48-hour
+ * challenge window. Both are overridable at build time so a demo can walk the
+ * full Missed -> Challenged -> Release path in minutes instead of weeks -- the
+ * state machine is identical either way, only the clock differs.
+ *
+ *   NEXT_PUBLIC_HEARTBEAT_INTERVAL=120 NEXT_PUBLIC_CHALLENGE_PERIOD=90 npm run build
+ *
+ * The on-chain program accepts any positive interval, so this is a presentation
+ * choice, not a constraint.
+ */
+function positiveSeconds(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const parsed = Number(raw);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+export const HEARTBEAT_INTERVAL = positiveSeconds("NEXT_PUBLIC_HEARTBEAT_INTERVAL", 30 * 24 * 60 * 60);
+export const CHALLENGE_PERIOD = positiveSeconds("NEXT_PUBLIC_CHALLENGE_PERIOD", 48 * 60 * 60);
 export const FEE_BPS = 5;
 
 /** Explorer deep link for an address or signature on the configured cluster. */

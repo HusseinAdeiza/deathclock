@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { Heir, VaultSnapshot } from "@/types";
-import { formatSol, shorten, stateLabel } from "@/utils/helpers";
+import { formatDuration, formatSol, shorten, stateLabel } from "@/utils/helpers";
 import { explorerLink } from "@/utils/constants";
 import { Pill, Stat, StatRow, Mono, DataRow } from "@/components/ui";
 
@@ -196,9 +196,8 @@ export function VaultConsole(props: Props) {
               />
               <Stat
                 label="Interval"
-                value={snapshot.heartbeatInterval / 86400}
-                unit="days"
-                hint={`${snapshot.challengePeriod / 3600}h challenge on report`}
+                value={formatDuration(snapshot.heartbeatInterval)}
+                hint={`${formatDuration(snapshot.challengePeriod)} challenge on report`}
               />
             </StatRow>
           </div>

@@ -9,6 +9,7 @@
     "lint": "next lint",
     "check:base58": "tsx scripts/check-base58.ts",
     "check:provider": "tsx scripts/check-provider-unwrap.ts",
+    "check:demo": "tsx scripts/check-demo-timing.ts",
     "check:prover-client": "tsx scripts/check-prover-client.ts"
   },
   "dependencies": {
