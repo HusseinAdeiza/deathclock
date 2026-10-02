@@ -21,100 +21,107 @@ judge wants to see it *work*.
 
 ---
 
-### Beat 1 — the problem (0:00–0:25)
+### Before you record — build the demo version
 
-> About 140 billion dollars in Bitcoin is unreachable. Lost seed phrases,
-> deceased holders with no executor, hardware wallets nobody can open.
+The heartbeat cannot be shown live: it takes 4–8 minutes against a 300-second
+window. But **the inheritance path needs no proof at all.** `report_death`,
+`initiate_challenge`, `resolve_challenge`, and `release_inheritance` are all
+proof-free — only `heartbeat` requires one.
+
+So build short intervals and walk the whole lifecycle live:
+
+```bash
+cd app
+NEXT_PUBLIC_HEARTBEAT_INTERVAL=120 NEXT_PUBLIC_CHALLENGE_PERIOD=90 npm run build
+```
+
+This is not a mock or a shortcut. It is the same state machine with a shorter
+clock, and the lamports that move are real devnet lamports.
+
+### Beat 1 — one person, not a statistic (0:00–0:20)
+
+> A man has a hardware wallet. He dies. His children cannot open it, and the
+> money is gone forever.
 >
-> Crypto made value transferable but did nothing for succession.
-
-**Screen:** the landing page, scrolling slowly.
-
----
-
-### Beat 2 — what DeathClock does (0:25–0:50)
-
-> DeathClock lets you name who inherits your crypto. You deposit, you name your
-> heirs, and once a month you send a receipt that proves you're alive.
+> That happens with about a hundred and forty billion dollars of Bitcoin.
 >
-> Stop sending them, and after 48 hours the money goes to the people you named.
-> No lawyer, no custodian.
+> DeathClock is what he should have set up when he was well.
 
-**Screen:** scroll to **How to use** — this is the section you added. Let it sit
-for a beat. This is the "non-developer can use it" evidence.
+Do **not** open with the $140 billion. Open with the person.
 
----
+### Beat 2 — what it is (0:20–0:40)
 
-### Beat 3 — create the estate (0:50–1:20)
-
-**Do this live. Do not cut.**
-
-1. Click **Connect** → **Phantom**
-2. Your address appears top-right
-3. Add two heirs — use two spare devnet addresses
-4. Shares **60** and **40**
-5. Create the vault
-
-> Here's me doing it now.
-
-**Note:** say out loud that shares must total 100% and **cannot be edited after
-creation**. If a judge spots that gap first, you look defensive; if you say it
-first, you look careful.
-
----
-
-### Beat 4 — the vault console (1:20–1:45)
-
-**Screen:** the vault console showing the live vault.
-
-> This isn't a mock. Every number here is read straight off the Solana devnet
-> chain. Balance, state, heirs, shares, and the challenge window.
-
-**Point at the existing devnet vault** if the console shows it — 0.4 SOL, two
-heirs. That's a real funded vault someone can verify in Explorer.
-
----
-
-### Beat 5 — the honest limitation (1:45–2:20)
-
-**This is the most important beat in the video.** Do not skip it.
-
-> Now the part I want to be upfront about. Sending a real heartbeat takes four
-> to eight minutes on ordinary hardware. That's because it produces a genuine
-> zero-knowledge proof — the pairing check runs inside the Solana VM, 183,000 of
-> 200,000 compute units — and the proof has to be fresh within 300 seconds.
+> You deposit, you name who inherits, and once a month you prove you're alive.
 >
-> So the proof takes longer than the window it's allowed to live in. That's the
-> real bottleneck, and a GPU prover is the fix.
-
-**Screen:** the proof panel. Let the timeout or the pending state show.
-
-> I'm not going to fake it to look faster.
-
-That sentence is doing more work than anything else you'll say.
-
----
-
-### Beat 6 — the security fix (2:20–2:50)
-
-> While building this I found a real vulnerability in my own payout code. It
-> credited whatever accounts the caller passed in, without checking they were the
-> registered heirs. Anyone could redirect someone's inheritance.
+> Stop proving it, and after 48 hours the money goes to them.
 >
-> It's fixed and deployed. Anyone can verify — `npm run verify:deploy` prints the
-> on-chain slot the program is running.
+> The interesting part is what happens in between.
 
-**Screen:** terminal, or the GitHub commit. **Do not** show the local validator,
-where the proof takes 40 minutes.
+### Beat 3 — set it up (0:40–1:00)
+
+**Do this live.** Connect Phantom, add two heirs at 60/40, deposit.
+
+> One vault, two heirs, sixty-forty. That's it.
+
+### Beat 4 — the missed heartbeat (1:00–1:25)
+
+Wait out the 120-second interval, then report the missed heartbeat.
+
+> The interval lapsed, so it's reported. Watch what does **not** happen.
+
+### Beat 5 — nothing moved (1:25–1:55) ← the beat that wins it
+
+**Slow down here. Let the numbers sit on screen.**
+
+> Nothing. No money moved. The funds are still in the vault.
+>
+> This is the part that matters. Anyone can pay out after a death. The hard part
+> is refusing to pay out after a false alarm — a dropped connection, a flat
+> battery, three weeks away.
+>
+> So the heartbeat isn't just a signal. It's a proof that the owner is alive.
+> Stopping it doesn't trigger a payout. It opens a question.
+
+### Beat 6 — the challenge window (1:55–2:20)
+
+Start the challenge, show the countdown.
+
+> 48 hours. If the owner produces a valid proof in that window, everything
+> resets and the estate stays his. If not, it's released.
+>
+> A false alarm costs the reporter nothing and the owner everything to fix.
+> That asymmetry is deliberate — it means griefing is bounded by the clock.
+
+### Beat 7 — release (2:20–2:50)
+
+Let the window expire, resolve as deceased, release.
+
+> Heirs don't sign anything, don't approve anything, don't even have to know
+> this exists. The addresses were recorded at creation.
+
+**Point at the heir balances.** Show both wallets received their share, and
+show the 0.5% fee as a separate line.
+
+### Beat 8 — close (2:50–3:00)
+
+> The proof that makes the heartbeat real runs on RISC Zero and is verified
+> inside the Solana VM — 183,000 of 200,000 compute units. It takes four to
+> eight minutes, which is the real bottleneck, and a GPU is the fix.
+>
+> Repo's open, including the postmortem.
+
+**Screen:** github.com/HusseinAdeiza/deathclock
 
 ---
 
-### Beat 7 — close (2:50–3:00)
+## If you want to show the proof instead
 
-> Repo's open, including the postmortem with everything that broke and why.
-> Thank you.
+You have 3 minutes and a proof that needs 4–8. Don't. Cut it to a screen
+capture of the verified transaction and one sentence:
 
-**Screen:** https://github.com/HusseinAdeiza/deathclock
+> This is the verified heartbeat. It ran on devnet.
+
+[`3KuQVp5k…`](https://explorer.solana.com/tx/3KuQVp5kLnAetbQsXKA2US1A2uY6FPNtEYGn6hQQkSgn7Mio9MriCdtnLeVEXiQsrKk3juzypfr8vtKDUfK7tiji?cluster=devnet)
 
 ---
 
@@ -122,11 +129,17 @@ where the proof takes 40 minutes.
 
 | Problem | Do this |
 |---|---|
-| Heartbeat proof hangs | Expected. Say so, move to beat 5. |
-| Phantom won't connect | Hard-refresh. Confirm devnet SOL first. |
+| Wallet says "no vault" | You forgot the short-interval build. `npm run build` again. |
+| Interval already lapsed before you record | Fine — skip to beat 4. |
+| Challenge period feels long | It is 90 seconds. Narrate the wait. |
 | Deposit looks slow | Devnet. Narrate over it, don't cut the recording. |
+| Phantom won't connect | Hard-refresh. Confirm devnet SOL first. |
 | A typo in a tx signature | Say "I'll put the link in the description." |
 | Site looks stale | `Ctrl+Shift+R` before recording, not during. |
+
+**Heir balances won't update instantly.** SOL transfers take a couple of seconds
+to land. Have the heir tabs open so you can switch and show the funds arriving —
+that shot is the whole video.
 
 **If something breaks mid-take, keep going.** A video with one honest stumble
 beats a retake where your voice is off. Cut in editing instead.
@@ -143,14 +156,15 @@ five beats, don't read them.
 
 ---
 
-### 0:00–0:20 — you and the problem
+### 0:00–0:20 — one person, not a statistic
 
-> I'm building DeathClock. A hundred and forty billion dollars in Bitcoin is
-> unreachable — lost keys, people who died without a will, hardware wallets
-> nobody can open.
+> A man holds a hardware wallet. He dies. His children can't open it.
 >
-> Succession in crypto still means a lawyer or a custodian. I think that's
-> fixable.
+> That story is worth about a hundred and forty billion dollars of Bitcoin, but
+> the number isn't the point — the point is that he could have set it up
+> himself, while he was well, in about two minutes.
+>
+> I'm building DeathClock. It's why that wallet would have opened.
 
 ---
 
@@ -174,7 +188,10 @@ problem.
 > proof, verified on-chain — the pairing check runs inside the virtual machine,
 > not on a server. There's a transaction you can look at that proves it.
 >
-> The challenge window means a false alarm can never move money.
+> The challenge window means a false alarm can never move money. And
+> `release_inheritance` takes no signature — the heirs never have to approve
+> anything, or even know the vault exists. The addresses were recorded at
+> creation, while he was well enough to be sure.
 
 ---
 
