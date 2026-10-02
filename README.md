@@ -1,5 +1,8 @@
 # DeathClock
 
+> **New here?** [`USING.md`](USING.md) — how to set up an estate in five steps,
+> no code or cryptography required.
+>
 > **Crypto World's Fair submission:** [`SUBMISSION.md`](SUBMISSION.md) —
 > organised against the six judging criteria, with reproducible commands.
 > Third-party code and licenses: [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md).

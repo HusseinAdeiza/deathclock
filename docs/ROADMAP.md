@@ -23,8 +23,13 @@ check, and because the honest version is more useful than the optimistic one.
 
 **Known gaps, stated plainly**
 
-- Proving takes 231–461 s against a 300 s freshness window. This is the
-  binding constraint on the product.
+- **No withdrawal instruction.** Deposits work; there is no way to take money
+  back out before the estate is released. Nothing else blocks real use of this
+  as a product, so this is first on Phase 4 and should be treated as urgent.
+- **The heirs cannot be edited** after `initialize_vault`. A typo in an address
+  is permanent.
+- Proving takes 231–461 s against a 300 s freshness window. This is the binding
+  constraint on the proof path.
 - The ZK proof delivers attestation, not privacy: the guest commits owner,
   timestamp, and nonce in the clear.
 - `resolve_challenge` is permissionless — griefable, not fund-stealing.
@@ -104,6 +109,9 @@ gap between a good demonstration and a product.
 
 - A running prover nobody has to think about. Wallet-triggered if possible.
 - Remove the manual Seal path once the proving service is trustworthy.
+- **Withdrawal.** `withdraw(amount)` with an owner signer and an active vault.
+  Small, and without it the product cannot honestly hold anyone's money.
+- **Heir editing** before release, so a typo is recoverable.
 - SPL token support — correctly funded this time: deposit must wrap or mint
   real token liquidity, so release cannot pay out nothing.
 - Heir-side UX: the person inheriting should be able to see and claim without

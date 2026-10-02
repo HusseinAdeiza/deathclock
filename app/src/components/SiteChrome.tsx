@@ -5,6 +5,7 @@ import { Container } from "@/components/ui";
 import { HeaderControls, NetworkBadge } from "@/components/WalletButton";
 
 const NAV = [
+  { href: "#how-to-use", label: "How to use" },
   { href: "#protocol", label: "Protocol" },
   { href: "#proof", label: "Proof" },
   { href: "#heirs", label: "Heirs" },
@@ -76,6 +77,7 @@ export function SiteFooter() {
     {
       title: "Protocol",
       links: [
+        { label: "How to use it", href: "#how-to-use" },
         { label: "How release works", href: "#states" },
         { label: "Proof pipeline", href: "#proof" },
         { label: "Beneficiary shares", href: "#heirs" },
@@ -88,7 +90,11 @@ export function SiteFooter() {
         { label: "Program ID (devnet)", href: "https://explorer.solana.com/address/C8unxtjoDZWy2GmwHUPuSve1BHT5TtRKpNaDofbMS5Vh?cluster=devnet", external: true },
         { label: "Verifier router", href: "https://explorer.solana.com/address/5n8zx79RUHafwSSB4vRU5ao9atHzJQHTdJR9ty8YrVte?cluster=devnet", external: true },
         { label: "Groth16 verifier", href: "https://explorer.solana.com/address/2iPoTWMXWJ6inLnBeGEZyiKkwEzaQvCX24Cp82UcWm8K?cluster=devnet", external: true },
-        { label: "Repository", href: "#", external: false },
+        {
+          label: "Repository",
+          href: "https://github.com/HusseinAdeiza/deathclock",
+          external: true,
+        },
       ],
     },
     {
@@ -96,8 +102,16 @@ export function SiteFooter() {
       links: [
         { label: "Architecture", href: "#protocol" },
         { label: "State machine", href: "#states" },
-        { label: "Post-mortem", href: "#", external: false },
-        { label: "Deployment", href: "#", external: false },
+        {
+          label: "Post-mortem",
+          href: "https://github.com/HusseinAdeiza/deathclock/blob/main/docs/POSTMORTEM.md",
+          external: true,
+        },
+        {
+          label: "Roadmap",
+          href: "https://github.com/HusseinAdeiza/deathclock/blob/main/docs/ROADMAP.md",
+          external: true,
+        },
       ],
     },
   ] as const;

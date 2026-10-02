@@ -11,6 +11,7 @@ import { Hero } from "@/components/Hero";
 import { ProofSection } from "@/components/ProofSection";
 import { FeatureBento, ClosingCta } from "@/components/FeatureBento";
 import { StateWalkthrough } from "@/components/StateWalkthrough";
+import { HowToUse } from "@/components/HowToUse";
 import { VaultConsole } from "@/components/VaultConsole";
 import { HeartbeatPanel } from "@/components/HeartbeatPanel";
 
@@ -80,6 +81,7 @@ export function DeathClockApp() {
 
       <main>
         <Hero />
+        <HowToUse />
         <ProofSection />
         <FeatureBento />
         <StateWalkthrough />
