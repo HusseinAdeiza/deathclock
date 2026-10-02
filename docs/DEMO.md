@@ -4,43 +4,90 @@
 
 David is 45. He has accumulated 500,000 SOL and wants his wife and two children to inherit it without a lawyer, a custodian, or a single missed password reset. He deposits SOL into a DeathClock vault, names the three beneficiaries, and sends a heartbeat every month.
 
-## Local judge demo
+## Two ways to see this
 
-### 1. Start the chain
+| | What you need | Time | Shows |
+|---|---|---|---|
+| **A. The live site** | a devnet wallet | 2 min | the product, reading real chain state |
+| **B. The full local demo** | Docker | 20–40 min | the entire state machine, including payout |
 
-Build the program and start the local validator using the commands in the root `README.md`. The program is injected at genesis so the demo does not depend on a devnet deployment.
+**Start with A.** It is fast and needs nothing but a wallet. Use B only if you
+want to walk the state transitions yourself.
 
-### 2. Show the product surface
+---
 
-Run `cd app && npm run dev` and open the local URL. The landing page is intentionally editorial: explain the 48-hour challenge window before explaining any technical detail.
+## A. The live site
 
-### 3. Connect Phantom
+```bash
+cd app && npm install && npm run dev
+```
 
-Switch Phantom to the local validator if your Phantom build supports a local RPC, or use the UI against devnet for a deployed program. The local integration suite is the authoritative transaction demo for this repository.
+Open the local URL, connect Phantom, and create an estate with two heirs at 60/40.
+The vault console reads state straight from devnet.
 
-### 4. Create the estate
+**The heartbeat will time out on ordinary hardware.** Proving takes four to eight
+minutes against a 300-second freshness window, so a live `heartbeat` call will
+fail. That is a known limitation, documented in the roadmap — narrate it rather
+than waiting on it. Everything else on the site responds immediately.
 
-Use the 60/20/20 fixture:
+---
 
-- Heir 1: 60%
-- Heir 2: 20%
-- Heir 3: 20%
-- Heartbeat interval: 30 days in production; shortened in the local test fixture
-- Challenge period: 48 hours in production; shortened in the local test fixture
+## B. The full local demo
 
-The `DeathClock` integration test creates a fresh owner, derives the vault PDA, initializes the account, and asserts the stored state.
+### B1. Build the toolchain image first
 
-### 5. Deposit and heartbeat
+**This step is required and easy to miss.** All Rust and Anchor work runs inside
+a Docker image that is not on Docker Hub:
 
-The full lifecycle test deposits 10 SOL, submits a fresh timestamp envelope, waits past the fixture heartbeat interval, and submits the heartbeat. The ZK adapter test separately verifies that the owner secret and timestamp produce the expected commitment and that malformed proof tags fail.
+```bash
+bash scripts/build-toolchain-image.sh
+```
 
-### 6. Miss the heartbeat
+It prints `sanitova-solana` when done. Without this, every later step fails with
+`Unable to find image 'sanitova-solana'`.
 
-After the interval, anyone can call `report_death`; the state moves from `Active` to `Missed`. `initiate_challenge` starts the challenge timer. Explain that this is the safety valve: a false report does not immediately transfer funds.
+You need Docker running, and RISC Zero's prover shells out to Docker itself, so
+the host socket must be available to the container.
 
-### 7. Resolve the challenge
+### B2. Start the chain
 
-After the challenge period, `resolve_challenge(false)` moves the vault to `Release`. `release_inheritance` preserves the rent reserve, sends 0.5% to the canonical treasury PDA, distributes the remainder by shares, and transitions to `Released`.
+```bash
+bash scripts/localnet-e2e.sh
+```
+
+All three programs are injected at genesis, so nothing depends on a devnet
+deployment. This takes 20–40 minutes because it compiles the Anchor program and
+the RISC Zero guest, then generates a real Groth16 proof.
+
+### B3. Connect
+
+Run `cd app && npm run dev` separately. To point the UI at the local validator:
+
+```
+NEXT_PUBLIC_RPC_URL=http://127.0.0.1:8899
+NEXT_PUBLIC_NETWORK=localnet
+```
+
+Phantom cannot switch networks, so the local chain is best exercised through the
+integration suite rather than the UI. The suite is the authoritative transaction
+demo for this repository.
+
+### B4. The lifecycle
+
+The suite runs the whole thing against a 60/20/20 fixture with shortened
+intervals:
+
+1. `initialize_vault` — three heirs, shares `[60, 20, 20]`
+2. `deposit` — 10 SOL
+3. `heartbeat` — a real Groth16 receipt, verified on-chain
+4. `report_death` — anyone may call this once the interval elapses
+5. `initiate_challenge` — opens the challenge timer
+6. `resolve_challenge(false)` — requires the full challenge period to pass
+7. `release_inheritance` — rent reserve preserved, 0.5% to treasury, remainder by
+   shares, state becomes `Released` and cannot reopen
+
+Step 4 is the safety valve worth explaining: a false report does **not** move
+money. It opens a window the owner can still answer.
 
 ## Verified local result
 
@@ -59,11 +106,13 @@ generated by the two-phase Docker pipeline, accepted by Solana's pairing
 syscall through `verifier_router`. The fourth proves the verifier is not
 accepting arbitrary bytes.
 
-Confirmed transaction (local validator, Solana 1.18.26):
+On **public devnet**, so you can check it yourself without running anything:
 
-```text
-5ngg4ghZrVjemXhr2fZ6GJ2i31w5nm3ow7S1CHaAy9n4YKDADdDwhABB5QYSGsfXFwzopZZZc585KnqgdeSMSkqN
-```
+[`3KuQVp5k…`](https://explorer.solana.com/tx/3KuQVp5kLnAetbQsXKA2US1A2uY6FPNtEYGn6hQQkSgn7Mio9MriCdtnLeVEXiQsrKk3juzypfr8vtKDUfK7tiji?cluster=devnet)
+— 183,194 of 200,000 CU, `err: None`.
+
+The local run produces its own signature, recorded in the ignored
+`target/` artifact. Do not expect a fixed one to replay.
 
 The suite is stateful and order-dependent: the vault is opened before the proof
 is used, so the freshness window is not consumed by setup.

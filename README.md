@@ -18,7 +18,6 @@ DeathClock ──CPI──▶ verifier_router ──selector 73c457ba──▶ g
                                             BN254 pairing check on the SNARK
 ```
 
-- Verified heartbeat transaction `5ngg4ghZrVjemXhr2fZ6GJ2i31w5nm3ow7S1CHaAy9n4YKDADdDwhABB5QYSGsfXFwzopZZZc585KnqgdeSMSkqN`, confirmed against a local validator running Solana 1.18.26.
 - **The proof path is live on public devnet.** Heartbeat transaction [`3KuQVp5k…`](https://explorer.solana.com/tx/3KuQVp5kLnAetbQsXKA2US1A2uY6FPNtEYGn6hQQkSgn7Mio9MriCdtnLeVEXiQsrKk3juzypfr8vtKDUfK7tiji?cluster=devnet) carries a genuine RISC Zero Groth16 proof and runs the whole chain on-chain:
 
   ```
