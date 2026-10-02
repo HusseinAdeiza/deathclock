@@ -117,6 +117,13 @@ The local run produces its own signature, recorded in the ignored
 The suite is stateful and order-dependent: the vault is opened before the proof
 is used, so the freshness window is not consumed by setup.
 
+## Recording a demo video
+
+Beat-by-beat scripts for both the 3-minute demo and the 2-minute pitch are in
+[`VIDEO-SCRIPTS.md`](VIDEO-SCRIPTS.md). Read that before you record.
+
+---
+
 ## Devnet recording checklist
 
 Record the following transaction signatures in a private, ignored JSON artifact; never commit wallet secrets:

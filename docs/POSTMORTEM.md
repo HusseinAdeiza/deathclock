@@ -1,29 +1,27 @@
 # Postmortem: what broke while building DeathClock
 
-This records the failures that actually happened during the build, what caused each one, and the generalisable lesson. Five of them cost real time, and two of those five were my own mistakes that looked like platform bugs.
+These are the failures that actually happened while building this, and what caused each one. Five cost real time. Two of those five were my own mistakes wearing a platform bug's clothes.
 
-Documenting failure modes is explicitly part of the hackathon's bonus criteria. More importantly, each of these is a trap the next person building on RISC Zero + Solana will hit too.
+Writing this down is partly because the hackathon rewards it, and partly because every one of these is a trap the next person building on RISC Zero and Solana will walk straight into.
 
 ---
 
 ## 1. `PairingError` with no diagnostic — my own constant was wrong
 
-**Symptom.** The router dispatched correctly to `groth_16_verifier`, which returned `PairingError. Error Number: 6003`. No detail, no point index, nothing.
+The router dispatched correctly to `groth_16_verifier`, which returned `PairingError. Error Number: 6003`. No detail, no point index, nothing at all.
 
-**What I assumed.** That the runtime syscall had been removed. Agave 4.2.2 vs Solana 1.18.26 became the theory, and I spent a long time on validator-version archaeology — including pinning a 1.18.26 image — without ever confirming the syscall was missing.
+I assumed the runtime syscall had been removed. Agave 4.2.2 versus Solana 1.18.26 became the theory, and I spent a long time on validator-version archaeology — including pinning a 1.18.26 image — without ever confirming the syscall was missing.
 
-**Actual cause.** The BN254 base field prime `q` in `zk/src/lib.rs` was correct in its first 8 bytes and wrong after:
+It was a hex literal in my own source. The BN254 base field prime `q` in `zk/src/lib.rs` was right for its first 8 bytes and wrong after that:
 
 ```
 first 8 bytes:  correct  (0x30644e72e131a029)
 remainder:      diverged (b6773a305d761193… instead of b85045b68181585d…)
 ```
 
-Groth16 needs `pi_a` negated when the point is encoded for the verifier. Negating `y` against a wrong modulus produces a point that is **not on the curve**. `alt_bn128_pairing` rejects an off-curve input as a hard syscall failure, indistinguishable from "the syscall does not exist."
+Groth16 negates `pi_a` when the point is encoded for the verifier. Negating `y` against a wrong modulus gives you a point that isn't on the curve, and `alt_bn128_pairing` rejects an off-curve input as a hard syscall failure — indistinguishable from the syscall not existing.
 
-**The lesson.** I spent hours on an environment theory while the bug was a hex literal in my own source. When a ZK syscall fails with a generic error, **check the algebra before the runtime.** A G1 point is on the curve iff `y² == x³ + 3 mod q`; a G2 point follows the analogous check in Fp2. Two lines of Python, and it would have ended the investigation in the first ten minutes.
-
-There is now a regression test for exactly this (`negate_g1_preserves_the_curve_equation`), plus one asserting the constant is the true prime.
+What I should have run first: a G1 point is on the curve iff `y² == x³ + 3 mod q`, and G2 follows the analogous check in Fp2. Two lines of Python. It would have ended this in ten minutes instead of hours. Both checks are regression tests now (`negate_g1_preserves_the_curve_equation`, plus one asserting the constant really is the prime).
 
 ---
 
@@ -35,7 +33,7 @@ There is now a regression test for exactly this (`negate_g1_preserves_the_curve_
 
 **Actual cause.** The receipt's timestamp was more than 300 seconds old — the proving pipeline itself consumed the freshness window.
 
-**The lesson.** **An error code tells you where a check failed, not which check mattered.** Read the line number before drawing a conclusion, and re-read it when a conclusion starts looking convenient. This one cost a full re-run.
+An error code tells you where a check failed, not which check mattered. I should have read the line number before concluding anything, and re-read it once the conclusion started looking convenient. This one cost a full re-run.
 
 ---
 
@@ -49,9 +47,9 @@ There is now a regression test for exactly this (`negate_g1_preserves_the_curve_
 
 *Setup consumed the window too.* Vault initialization and the deposit used the same freshness window as the proof. Moved into the `before` hook.
 
-**The lesson.** **Take the timestamp after the build is warm, not when the script starts.** The clock must begin when proving begins. Phase 1 now persists its exact owner/timestamp/nonce so phase 2 reproduces an identical journal.
+The timestamp has to be taken once the build is warm, not when the script starts — the clock should begin when proving begins. Phase 1 now persists its exact owner/timestamp/nonce so phase 2 reproduces an identical journal.
 
-Note what this avoided: the tempting fix was to widen `PROOF_MAX_AGE_SECONDS`. That would have worked and would have been a real security regression — the program sets `last_heartbeat = now()` on success, so a replayed-but-in-window proof refreshes the clock. Making the pipeline fit inside the window was the honest fix.
+Worth noting what this avoided. The tempting fix was to widen `PROOF_MAX_AGE_SECONDS`, and it would have worked. It would also have been a genuine security regression: the program sets `last_heartbeat = now()` on success, so a replayed-but-in-window proof would refresh the clock. Making the pipeline fit inside the window was the honest fix.
 
 ---
 
@@ -59,7 +57,7 @@ Note what this avoided: the tempting fix was to widen `PROOF_MAX_AGE_SECONDS`. T
 
 **Symptom.** `pgrep` showed the process. RPC answered. Transactions confirmed nothing.
 
-**What I did wrong, twice.** First I assumed memory pressure — the local Docker validator was genuinely being OOM-killed by the Groth16 wrap, and I added `--memory 4g` plus a post-proving health check. That fixed the OOM but not this.
+I got this wrong twice. First I assumed memory pressure — the local Docker validator genuinely was being OOM-killed by the Groth16 wrap, and adding `--memory 4g` plus a post-proving health check fixed that, though not this.
 
 Then, on the VPS, I launched the validator with `setsid nohup … & disown` from inside an SSH command and assumed that detached it. It did not: **the validator remained a child of that shell.** When the connection later stalled, the process was still there while frozen. It survived a full 27 hours in that state.
 
@@ -67,7 +65,7 @@ Then, on the VPS, I launched the validator with `setsid nohup … & disown` from
 
 **The fix.** A systemd unit with `Restart=always` and an explicit `PATH` (the Solana binary is only on `PATH` for interactive shells, which cost me one confusing restart). See `scripts/deathclock-validator.service`.
 
-**The lesson.** **Check that the slot advances; never check that the process exists.** Reachability is not liveness — a validator with a corrupt ledger will happily answer RPC forever. And `setsid` inside an SSH command is not a supervision strategy; if the process must outlive the session, give it an init system.
+Check that the slot advances, not that the process exists. Reachability isn't liveness — a validator with a corrupt ledger will happily answer RPC forever. And `setsid` inside an SSH command isn't a supervision strategy; if the process has to outlive the session, give it an init system.
 
 ---
 
@@ -79,7 +77,7 @@ Two separate failures, same root cause.
 
 *Compilation through a bind mount is slow enough to break a deadline.* Building the zk crates against `/workspace/target` took ~3.5 minutes and consumed the entire 300-second window on its own. Fix: a named Docker volume for the build cache.
 
-**The lesson.** **On Windows, keep compiler output and database files off the bind mount.** Both symptoms looked like something else entirely — one like a networking problem, one like a performance mystery.
+On Windows, keep compiler output and database files off the bind mount. Neither symptom looked like what it was — one looked like a networking problem, one like a performance mystery.
 
 ---
 
@@ -90,7 +88,7 @@ before it worked. All four failed *silently enough* to be worth writing down,
 because in every case a transaction signature was printed and the program
 account stayed empty.
 
-**`Anchor.toml` overrides `declare_id!`.** The vendored
+`Anchor.toml` overrides `declare_id!`. The vendored
 `solana-verifier/Anchor.toml` still carried upstream's program IDs. Editing
 the `declare_id!` literal in `lib.rs` changed the generated IDL but not the
 binary, and `anchor build` skipped the rebuild entirely when a stale
@@ -98,7 +96,7 @@ fingerprint matched. Verify a build with the IDL's `address` field. Do not
 try to grep the ELF: SBPF does not store the program ID as bytes or a symbol,
 so that check can only mislead.
 
-**The toolchain's CLI is a major version ahead of the validator.** The image
+The toolchain's CLI is a major version ahead of the validator. The image
 ships `solana-cli 4.2.2`, whose signature is
 
     solana program deploy [FLAGS] [OPTIONS] [PROGRAM_FILEPATH]
@@ -116,13 +114,13 @@ all. The working form is
 
 where `--program-id` takes a **keypair path**, not a pubkey.
 
-**Never fund a program keypair before deploying.** Any transfer creates the
+Never fund a program keypair before deploying. Any transfer creates the
 account, and an existing account can never become a program account — even a
 0-byte account owes the rent-exempt minimum, so the loader rejects it with
 `not an upgradeable program or already in use`. Rent is charged to the fee
 payer during the deploy. This cost three sets of keypairs.
 
-**A signature is not proof of deployment.** The funding transfer and the
+A signature is not proof of deployment. The funding transfer and the
 deploy each print one, and several runs printed `Signature:` while
 `getAccountInfo` still showed `executable: false` under the System Program.
 `scripts/deploy-devnet.sh` now gates on `getAccountInfo` and only reports
@@ -158,7 +156,7 @@ A plain client cannot take it either. `solana program set-upgrade-authority`
 defaults to the loader's `SetAuthorityChecked`, which requires the **new**
 authority to co-sign -- and a PDA cannot sign a top-level transaction.
 
-**The fourth route is the one that works.** The same CLI subcommand has a flag
+The fourth route is the one that works. The same CLI subcommand has a flag
 for exactly this case:
 
     solana program set-upgrade-authority <verifier> \
@@ -184,7 +182,7 @@ install* a verifier, not whether the router can *remove* one.
 
 #### Two dead ends on the way, both instructive
 
-**Hand-building the loader instruction in a client is a trap.** Constructing
+Hand-building the loader instruction in a client is a trap. Constructing
 `SetAuthority` manually and submitting it failed with
 
     Error processing Instruction 0: An account required by the instruction is
@@ -196,7 +194,7 @@ thing worth using. Reached the correct answer only by reading
 `solana program set-upgrade-authority --help` inside the toolchain image,
 where the flag's description is right there.
 
-**A failed hand-rolled experiment is not evidence of a platform limit.** I had
+A failed hand-rolled experiment is not evidence of a platform limit. I had
 recorded the CPI wall as a hard stop and written it into this document. The
 instruction-shape failure above is a good reminder of the inverse: an error
 that says "missing", "invalid" or "not supported" is a statement about the
@@ -236,9 +234,10 @@ generalised from it to "impossible on a public cluster" without checking
 whether the CLI offered a third path. It did. Being sure a limit is a limit
 is worth verifying too, and the check is usually one `--help` away.
 
-**When a cryptographic or infrastructure error is generic, verify the algebra
-and the liveness before you blame the version.** A validator version is the
-explanation you reach for last, not first. **And when you have exhausted your
-own explanations, check whether the platform is actually asking for
-something impossible** — but prove that from the runtime's own error and the
-documentation, not from a plausible theory.
+So: when a cryptographic or infrastructure error is generic, check the algebra
+and check the liveness before blaming a version. A validator version is the
+explanation you reach for last, not first.
+
+And when you run out of your own explanations, it's worth checking whether the
+platform is genuinely asking for something impossible — but prove that from the
+runtime's own error and the docs, not from a theory that sounds plausible.

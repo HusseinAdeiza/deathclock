@@ -137,6 +137,7 @@ The rationale is that the fee is collected exactly once, at the moment value act
 - `docs/POSTMORTEM.md` — the failures behind this build, and what caused them.
 - `docs/DEMO.md` — judge-facing demo script.
 - `docs/ROADMAP.md` — what blocks this from being a product someone can safely use.
+- `docs/VIDEO-SCRIPTS.md` — beat-by-beat scripts for the demo and pitch videos.
 
 ## Reproducing the verified heartbeat
 
