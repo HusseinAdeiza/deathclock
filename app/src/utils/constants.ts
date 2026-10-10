@@ -24,7 +24,13 @@ function positiveSeconds(name: string, fallback: number): number {
 
 export const HEARTBEAT_INTERVAL = positiveSeconds("NEXT_PUBLIC_HEARTBEAT_INTERVAL", 30 * 24 * 60 * 60);
 export const CHALLENGE_PERIOD = positiveSeconds("NEXT_PUBLIC_CHALLENGE_PERIOD", 48 * 60 * 60);
-export const FEE_BPS = 5;
+// The program computes fee = distributable * 5 / 1000, i.e. half a percent.
+// The name suggests basis points (per 10,000) but the divisor is 1_000, which is
+// exactly how the UI ended up displaying 0.05% while the chain charged 0.5%.
+// Derive the percentage instead of inviting a hand-typed divisor.
+export const FEE_NUMERATOR = 5;
+export const FEE_DENOMINATOR = 1_000;
+export const FEE_PERCENT = (FEE_NUMERATOR / FEE_DENOMINATOR) * 100;
 
 /** Explorer deep link for an address or signature on the configured cluster. */
 export function explorerLink(kind: "address" | "tx", value: string): string {

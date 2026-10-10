@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { Container, Pill, Section, Stat, StatRow } from "@/components/ui";
-import { PROGRAM_ID, RPC_URL, NETWORK, FEE_BPS } from "@/utils/constants";
+import { PROGRAM_ID, RPC_URL, NETWORK, FEE_PERCENT } from "@/utils/constants";
 import { GROTH16_VERIFIER_PROGRAM_ID, ROUTER_PROGRAM_ID } from "@/utils/verifier";
 import { formatSol, shorten } from "@/utils/helpers";
 import { WalletButton } from "@/components/WalletButton";
@@ -122,7 +122,7 @@ function DeploymentPanel() {
 
       <div className="grid grid-cols-2 divide-x divide-line/12 border-t border-line/12">
         <div className="px-5 py-4">
-          <Stat label="Release fee" value={FEE_BPS / 100} unit="%" hint="charged only on distribution" />
+          <Stat label="Release fee" value={FEE_PERCENT} unit="%" hint="charged only on distribution" />
         </div>
         <div className="px-5 py-4">
           <Stat label="Challenge window" value="48" unit="h" hint="before funds can move" />

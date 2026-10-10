@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Container, Section, SectionHeader, Pill, Footnote } from "@/components/ui";
-import { CHALLENGE_PERIOD, HEARTBEAT_INTERVAL, FEE_BPS } from "@/utils/constants";
+import { CHALLENGE_PERIOD, HEARTBEAT_INTERVAL, FEE_PERCENT } from "@/utils/constants";
 
 /* ---------------------------------------------------------------------------
    State machine walkthrough
@@ -103,7 +103,7 @@ const STATES: Record<StateId, StateMeta> = {
         label: "Distribute to heirs",
         to: "released",
         instruction: "release_inheritance",
-        detail: `Splits by the shares stored at vault creation, in integer lamports, then takes a ${FEE_BPS / 100}% fee to the protocol treasury. Rounding dust stays in the vault rather than being stranded.`,
+        detail: `Splits by the shares stored at vault creation, in integer lamports, then takes a ${FEE_PERCENT}% fee to the protocol treasury. Rounding dust stays in the vault rather than being stranded.`,
         primary: true,
       },
     ],
@@ -136,7 +136,7 @@ export function StateWalkthrough() {
   // a reader checks add up the way the program's arithmetic does.
   const example = useMemo(() => {
     const estate = 10;
-    const fee = (estate * FEE_BPS) / 10_000;
+    const fee = (estate * FEE_PERCENT) / 10_000;
     const distributable = estate - fee;
     const shares = [
       { label: "Spouse", share: 60 },
@@ -294,7 +294,7 @@ export function StateWalkthrough() {
               <Footnote>
                 Shares must total exactly 100% at creation, and the fee is taken before the split so
                 heirs are unaffected by it. The figure above is arithmetic on the configured{" "}
-                <span className="font-mono">FEE_BPS</span>, not a recorded transaction.
+                <span className="font-mono">FEE_PERCENT</span>, not a recorded transaction.
               </Footnote>
             </div>
           </div>

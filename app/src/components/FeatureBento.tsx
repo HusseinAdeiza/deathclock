@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Container, Section, SectionHeader, Pill, Stat, StatRow, Footnote } from "@/components/ui";
-import { CHALLENGE_PERIOD, HEARTBEAT_INTERVAL, FEE_BPS } from "@/utils/constants";
+import { CHALLENGE_PERIOD, HEARTBEAT_INTERVAL, FEE_PERCENT } from "@/utils/constants";
 
 /**
  * Feature showcase as an asymmetric bento.
@@ -146,7 +146,7 @@ export function FeatureBento() {
                 Charged once, on release, never on deposits.
               </h3>
               <p className="pretty mt-3 flex-1 text-sm leading-relaxed text-muted">
-                {FEE_BPS / 100}% of the estate goes to a protocol treasury PDA at distribution. No
+                {FEE_PERCENT}% of the estate goes to a protocol treasury PDA at distribution. No
                 subscription, no fee on a deposit, and no cost to a vault that is never claimed.
               </p>
             </div>
@@ -178,7 +178,7 @@ export function FeatureBento() {
                   unit="hours"
                   hint="Lock-up after a report"
                 />
-                <Stat label="Release fee" value={FEE_BPS / 100} unit="%" hint="One-time, on payout" tone="accent" />
+                <Stat label="Release fee" value={FEE_PERCENT} unit="%" hint="One-time, on payout" tone="accent" />
                 <Stat
                   label="Vault states"
                   value="5"
@@ -241,7 +241,7 @@ export function ClosingCta() {
                 { k: "Network", v: "Solana devnet" },
                 { k: "Proof system", v: "RISC Zero Groth16" },
                 { k: "On-chain check", v: "BN254 pairing" },
-                { k: "Protocol fee", v: `${FEE_BPS / 100}% on release` },
+                { k: "Protocol fee", v: `${FEE_PERCENT}% on release` },
               ].map((row) => (
                 <div key={row.k}>
                   <dt className="text-micro font-semibold uppercase text-on-invert">{row.k}</dt>

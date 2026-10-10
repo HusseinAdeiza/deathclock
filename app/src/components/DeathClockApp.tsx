@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useWallet } from "@/hooks/WalletProvider";
 import { useVault } from "@/hooks/useVault";
 import type { Heir, HeartbeatPayload, VaultSnapshot } from "@/types";
-import { FEE_BPS } from "@/utils/constants";
+import { FEE_PERCENT } from "@/utils/constants";
 import { Container, Section, SectionHeader, Pill, Footnote } from "@/components/ui";
 import { SiteHeader, SiteFooter } from "@/components/SiteChrome";
 import { Hero } from "@/components/Hero";
@@ -148,7 +148,7 @@ export function DeathClockApp() {
                       from the vault account, not from an off-chain record.
                     </li>
                     <li>
-                      <span className="font-medium text-ink">2.</span> The {FEE_BPS / 100}% fee
+                      <span className="font-medium text-ink">2.</span> The {FEE_PERCENT}% fee
                       moves to the protocol treasury PDA.
                     </li>
                     <li>
