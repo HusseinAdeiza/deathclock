@@ -87,6 +87,8 @@ pub enum DeathClockError {
     HeirAccountMismatch,
     #[msg("Payout account is not a safe system-owned recipient")]
     UnsafePayoutAccount,
+    #[msg("Vault holds only the rent reserve; nothing left to withdraw")]
+    NothingToWithdraw,
 }
 
 #[event]
@@ -147,6 +149,14 @@ pub struct EmergencyRecovery {
     pub timestamp: i64,
 }
 
+#[event]
+pub struct Withdrawal {
+    pub vault: Pubkey,
+    pub owner: Pubkey,
+    pub amount: u64,
+    pub timestamp: i64,
+}
+
 #[derive(Accounts)]
 pub struct InitializeVault<'info> {
     #[account(mut)]
@@ -197,6 +207,17 @@ pub struct EmergencyRecover<'info> {
     pub owner: Signer<'info>,
     #[account(mut, has_one = owner, seeds = [b"vault", owner.key().as_ref()], bump = vault.bump)]
     pub vault: Account<'info, Vault>,
+}
+
+/// Withdrawing is owner-only and seed-bound, so a beneficiary or third party
+/// cannot reach the vault's lamports through this path.
+#[derive(Accounts)]
+pub struct Withdraw<'info> {
+    #[account(mut)]
+    pub owner: Signer<'info>,
+    #[account(mut, has_one = owner, seeds = [b"vault", owner.key().as_ref()], bump = vault.bump)]
+    pub vault: Account<'info, Vault>,
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
@@ -545,6 +566,54 @@ pub mod deathclock {
         vault.challenge_started_at = 0;
         emit!(EmergencyRecovery {
             owner: vault.owner,
+            timestamp,
+        });
+        Ok(())
+    }
+
+    /// The owner takes everything back out, minus the rent-exempt minimum the
+    /// vault PDA needs to keep existing.
+    ///
+    /// All-or-nothing on purpose: a partial-withdrawal path would need its own
+    /// accounting rules for `total_deposited` and the release maths, and the
+    /// product does not need one yet.
+    ///
+    /// Withdrawing resets the death clock, exactly as `emergency_recover` does.
+    /// Without that, an owner could withdraw past a missed window and land back
+    /// in `Active` with a stale `last_heartbeat`, which would let the next
+    /// `report_death` fire immediately -- so the reset is a security property,
+    /// not a convenience.
+    pub fn withdraw(ctx: Context<Withdraw>) -> Result<()> {
+        let timestamp = now()?;
+        let vault = &mut ctx.accounts.vault;
+
+        // Once the estate is in Release, the funds belong to the heirs. Letting
+        // the owner withdraw here would undo a release the chain already decided.
+        require!(
+            matches!(vault.state, VaultState::Active | VaultState::Missed | VaultState::Challenged),
+            DeathClockError::InvalidState
+        );
+
+        let vault_info = vault.to_account_info();
+        let rent_reserve = Rent::get()?.minimum_balance(8 + Vault::SPACE);
+        let balance = vault_info.lamports();
+        require!(balance > rent_reserve, DeathClockError::NothingToWithdraw);
+
+        let amount = balance - rent_reserve;
+
+        // The vault signs for itself, so the lamports move without a CPI.
+        **vault_info.try_borrow_mut_lamports()? -= amount;
+        **ctx.accounts.owner.to_account_info().try_borrow_mut_lamports()? += amount;
+
+        vault.state = VaultState::Active;
+        vault.last_heartbeat = timestamp;
+        vault.death_reported_at = 0;
+        vault.challenge_started_at = 0;
+
+        emit!(Withdrawal {
+            vault: vault_info.key(),
+            owner: vault.owner,
+            amount,
             timestamp,
         });
         Ok(())

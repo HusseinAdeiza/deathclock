@@ -44,9 +44,10 @@ the vault is created once and the split is fixed.
 
 Deposit SOL. The balance appears as soon as the transaction confirms.
 
-> **Important, and easy to misread:** you can add to the vault, but you cannot
-> take money back out. There is no withdrawal instruction in the program yet.
-> Put in only what you genuinely intend to leave.
+> **You can take it all back out at any time**, right up until the estate starts
+> paying your heirs. One button, and everything returns except a small reserve
+> that keeps the vault account alive. Taking it out also resets the 30-day clock,
+> so it is a clean restart rather than a way to skip the challenge window.
 
 ### 4. Send a monthly receipt · several minutes
 
@@ -75,11 +76,10 @@ hours of genuine silence.
 ## Questions people actually ask
 
 **Can I take the money back out?**
-Not right now. The program supports deposits but has no withdrawal instruction,
-so what you put in stays in until the estate is released. This is the single
-biggest gap in the product and it is first on the
-[roadmap](docs/ROADMAP.md). On devnet this costs you nothing, since the coins
-are worthless.
+Yes. At any point before the estate releases, you withdraw and get everything
+back minus a small reserve that keeps the vault account alive. Once your heirs
+start being paid, the money is theirs and you cannot pull it back — that is the
+point of the protocol.
 
 **What if I make a mistake, like a typo?**
 The heirs cannot be edited after the vault is created. If you get an address

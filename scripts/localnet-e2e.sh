@@ -96,9 +96,9 @@ docker run -d --rm --name deathclock-validator \
   "${VALIDATOR_IMAGE}" \
     --reset \
     --ledger /tmp/deathclock-ledger \
-    --upgradeable-program /workspace/target/deploy/deathclock-keypair.json /workspace/target/deploy/deathclock.so "$DEATHCLOCK_AUTHORITY" \
-    --upgradeable-program /workspace/target/deploy/verifier_router-keypair.json /workspace/target/deploy/verifier_router.so "$DEATHCLOCK_AUTHORITY" \
-    --upgradeable-program /workspace/target/deploy/groth_16_verifier-keypair.json /workspace/target/deploy/groth_16_verifier.so "$ROUTER_STATE"
+    --upgradeable-program "${ROOT}/target/deploy/deathclock-keypair.json" "${ROOT}/target/deploy/deathclock.so" "$DEATHCLOCK_AUTHORITY" \
+    --upgradeable-program "${ROOT}/target/devnet/verifier_router-keypair.json" "${ROOT}/target/deploy/verifier_router.so" "$DEATHCLOCK_AUTHORITY" \
+    --upgradeable-program "${ROOT}/target/devnet/groth_16_verifier-keypair.json" "${ROOT}/target/deploy/groth_16_verifier.so" "$ROUTER_STATE"
 
 cleanup() {
   echo "==> stopping validator"
