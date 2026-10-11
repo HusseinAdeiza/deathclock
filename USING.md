@@ -48,6 +48,10 @@ Deposit SOL. The balance appears as soon as the transaction confirms.
 > paying your heirs. One button, and everything returns except a small reserve
 > that keeps the vault account alive. Taking it out also resets the 30-day clock,
 > so it is a clean restart rather than a way to skip the challenge window.
+>
+> **Status:** the code is written but its tests have not been run yet, so this
+> is not yet verified. It is not deployed, and the copy above describes what it
+> is meant to do rather than what has been proven to work.
 
 ### 4. Send a monthly receipt · several minutes
 

@@ -23,6 +23,9 @@ check, and because the honest version is more useful than the optimistic one.
 
 **Known gaps, stated plainly**
 
+- **Withdrawal exists but is unverified.** The instruction is written and
+  compiles; its tests have never run, because the localnet harness has been
+  broken since the programs moved to devnet. It is not deployed.
 - **The heirs cannot be edited** after `initialize_vault`. A typo in an address
   is permanent.
 - Proving takes 231–461 s against a 300 s freshness window. This is the binding
@@ -107,9 +110,14 @@ gap between a good demonstration and a product.
 
 - A running prover nobody has to think about. Wallet-triggered if possible.
 - Remove the manual Seal path once the proving service is trustworthy.
-- **Withdrawal.** Done — `withdraw` returns everything above the rent reserve,
-  owner-only, and resets the death clock so it cannot be used to dodge a
-  challenge window.
+- **Withdrawal.** Written, **not verified and not deployed**. `withdraw` returns
+  everything above the rent reserve, owner-only, and resets the death clock. The
+  Rust compiles and both payout guards are intact, but the test suite never ran —
+  the harness is broken independently of this change, because `declare_id!`
+  hardcodes the devnet program id and no localnet validator can therefore find a
+  freshly built binary. Fixing the harness is the prerequisite, and deploying
+  this before it passes would be reckless: an unverified instruction that moves
+  lamports is worse than none.
 - **Heir editing** before release, so a typo is recoverable.
 - SPL token support — correctly funded this time: deposit must wrap or mint
   real token liquidity, so release cannot pay out nothing.
