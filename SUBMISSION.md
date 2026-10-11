@@ -194,7 +194,7 @@ Stated plainly, because a judge will check:
 ```bash
 npm run check:ids          # program IDs and PDAs re-derive
 npm run verify:deploy      # deployed slot, authority, bytecode size
-npm run verify:live-vault  # 0.4 SOL vault, two heirs at 60/40
+npm run verify:live-vault  # the live vault, two heirs at 60/40
 npm run heartbeat:devnet   # a real Groth16 proof, end to end (~7 min)
 ```
 

@@ -26,7 +26,13 @@ DeathClock ──CPI──▶ verifier_router ──selector 73c457ba──▶ g
 
   183,194 of 200,000 compute units, `err: None`. The BN254 pairing check runs inside the Solana VM, not off-chain. Reproduce with `npm run heartbeat:devnet`.
 - Tamper case: the same receipt with a modified journal is **rejected**.
-- Live on devnet: vault [`GdqwHKfJ7wgNSGJ53J7mrA986Tg1UefUK9Y3btzX7Btt`](https://explorer.solana.com/address/GdqwHKfJ7wgNSGJ53J7mrA986Tg1UefUK9Y3btzX7Btt?cluster=devnet) — 0.4 SOL deposited, two heirs at 60/40, created and funded by `npm run e2e:devnet`. Reproduce with `npm run verify:live-vault`, which decodes it through the same path the deployed site uses.
+- Live on devnet: vault [`GdqwHKfJ7wgNSGJ53J7mrA986Tg1UefUK9Y3btzX7Btt`](https://explorer.solana.com/address/GdqwHKfJ7wgNSGJ53J7mrA986Tg1UefUK9Y3btzX7Btt?cluster=devnet) — 3.71 SOL held, two heirs at 60/40, created and funded by `npm run e2e:devnet` plus the demo deposits. Reproduce with `npm run verify:live-vault`, which decodes it through the same path the deployed site uses.
+
+  The figure above is the live balance at the time of writing and will move as deposits are made; the Explorer link is the authority. Recent deposits from the demo capture:
+
+  - [`3Uo84ZBZ...`](https://explorer.solana.com/tx/3Uo84ZBZuresvYfNYDmYLQ8mgd7VCWexiqetfrhZqLN4CofptCvynER9i3ToNHdDCEmXYWASg3S9fNJc4EjN9xHT?cluster=devnet)
+  - [`5buLf9Jm...`](https://explorer.solana.com/tx/5buLf9Jm8jboypCnr6dSav3nssKAsT39pLvhqPepRAySkGENpxFUuhfA4qowbiydKxd1255zyGKUirQzJhHgXW2N?cluster=devnet)
+
 
 ## The problem
 
@@ -44,6 +50,67 @@ flowchart LR
 ```
 
 The false-alarm case is the design constraint that matters most. Anyone can stop sending heartbeats to trigger a payout, so a heartbeat must be a *proof of life*, not an absence of activity, and a release must survive the owner showing up late.
+
+## Why this is different
+
+Crypto inheritance is a crowded field. Heirloom, Eternal Key, Dead Man's Vault,
+Legacy Wallet and Inheritable all solve the same problem the same way: a signed
+transaction resets a timer, and when the timer expires the heirs claim. The
+EVM pattern is the familiar `checkIn()` / `claim()` pair.
+
+That choice leaks three things permanently to anyone watching the chain:
+
+- **The owner's address**, which links an identity to the estate.
+- **Their activity pattern**, because every check-in is a timestamped event.
+- **The beneficiaries**, because heir addresses sit in the account in plaintext.
+
+The projects that brand themselves as zero-knowledge — Afterglow, Deadhand,
+CipherWill — use ZK for something else entirely: encrypting the payload so a
+server holding it cannot read the keys. None of them make the *liveness check
+itself* a cryptographic proof.
+
+**DeathClock does.** The heartbeat is a Groth16 proof verified inside the Solana
+VM, at 183,194 of 200,000 compute units, through a router that dispatches to a
+BN254 pairing check. A signature cannot do this, because a signature must reveal
+the public key it verifies against — you cannot prove "the authorised owner is
+alive" with a signature without disclosing who the owner is.
+
+**What that buys, concretely:**
+
+| | checkIn()/claim() | DeathClock |
+|---|---|---|
+| Liveness proof | a signature, which names the signer | a Groth16 proof the VM verifies |
+| Owner address on every check-in | yes | the proof attests; the vault is keyed to the owner |
+| Activity pattern | every check-in is a public event | same — see below |
+| Heir addresses | plaintext in the account | **plaintext in the account** |
+| Challenge window before release | varies, often none | 48h, and the owner can cancel inside it |
+| False-alarm cost | heirs are paid, funds are gone | release is refused, state resets |
+
+### Stated precisely, because the honest version is narrower
+
+This is the part most projects overclaim, so here is exactly what holds and what
+does not.
+
+**The liveness check is a real proof.** The guest commits `owner || timestamp ||
+nonce`, and the on-chain verifier accepts it only against the pinned guest image
+inside a 300-second window. That part is genuine and verified on devnet.
+
+**It does not hide the heirs.** `Vault.heirs` is `Vec<Pubkey>` — plaintext, read
+by anyone. Storing commitments instead is future work, listed in the roadmap. A
+project claiming hidden beneficiaries while storing addresses in the clear is
+lying; this one is not claiming it.
+
+**It does not hide the owner's liveness history either.** `HeartbeatEvent` emits
+the owner and timestamp, so a watcher can build a liveness timeline for a vault
+address. The proof attests *that the authorised party proved life*; it does not
+conceal *who* or *when*.
+
+So the claim is narrower than "private inheritance," and it is this: **the
+liveness check is a cryptographic proof verified in the VM rather than a
+signature that names its signer, and the release path is guarded so a false
+alarm costs nothing.** That is the difference between an inheritance app and a
+protocol for verifiable inheritance — and it is stated at the strength the code
+actually supports.
 
 ## How the heartbeat works
 
